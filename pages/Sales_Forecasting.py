@@ -221,6 +221,89 @@ result_df_hwd = errors_df_hwd.groupby('model').agg(total_sales=('sales', 'sum'),
                                           MAPE=('errors', mape))
 print(result_df_hwd)
 
+reg_df = df
+
+for i in range(1,8):
+    lag_i = 'lag_' + str(i)
+    reg_df[lag_i] = reg_df.sales.shift(i)
+
+# Rolling window
+reg_df['rolling_mean'] = reg_df.sales.rolling(window=7).mean()
+reg_df['rolling_max'] = reg_df.sales.rolling(window=7).max()
+reg_df['rolling_min'] = reg_df.sales.rolling(window=7).min()
+
+reg_df = reg_df.dropna(how='any', inplace=False)
+reg_df = reg_df.drop(['store', 'item'], axis=1)
+
+# Split the series to predict the last 3 months of 2017
+reg_df = reg_df.set_index('date')
+reg_train_df = reg_df.loc[:'2017-09-30']
+reg_test_df = reg_df.loc['2017-10-01':]
+
+X_train = reg_train_df.drop(['sales'], axis=1)
+y_train = reg_train_df['sales'].values
+
+X_test = reg_test_df.drop(['sales'], axis=1)
+y_test = reg_test_df['sales'].values
+
+# #Univariate SelectKBest class to extract top 5 best features
+# top_features = SelectKBest(score_func=f_regression, k=5)
+# fit = top_features.fit(X_train, y_train)
+# df_scores = pd.DataFrame(fit.scores_)
+# df_columns = pd.DataFrame(X_train.columns)
+#
+# #concat two dataframes for better visualization
+# feature_scores = pd.concat([df_columns, df_scores], axis=1)
+# feature_scores.columns = ['Feature','Score']  # naming the dataframe columns
+# print(feature_scores.nlargest(5,'Score'))  # print 5 best features
+
+# update X_train, X_test to include top features
+X_train = X_train[['rolling_mean', 'rolling_max', 'rolling_min', 'lag_7', 'lag_1']]
+X_test = X_test[['rolling_mean', 'rolling_max', 'rolling_min', 'lag_7', 'lag_1']]
+
+# fit model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+preds = model.predict(X_test)
+
+errors_df = reg_test_df[['sales']]
+errors_df['pred_sales'] = preds
+errors_df['errors'] = preds - y_test
+errors_df.insert(0, 'model', 'LinearRegression')
+
+# eval predictions
+fig = plt.figure(figsize=(14,7))
+plt.plot(reg_train_df.index, reg_train_df['sales'], label='Train')
+plt.plot(reg_test_df.index, reg_test_df['sales'], label='Test')
+plt.plot(errors_df.index, errors_df['pred_sales'], label='Forecast - Linear Regression')
+plt.legend(loc='best')
+plt.xlabel('date')
+plt.ylabel('sales')
+plt.title('Forecasts using Linear Regression model')
+plt.show()
+
+fig = plt.figure(figsize=(14,7))
+plt.plot(errors_df.index, errors_df.errors, label='errors')
+plt.plot(errors_df.index, errors_df.sales, label='actual sales')
+plt.plot(errors_df.index, errors_df.pred_sales, label='forecast')
+plt.legend(loc='best')
+plt.xlabel('date')
+plt.ylabel('sales')
+plt.title('Linear Regression forecasts with actual sales and errors')
+plt.show()
+st.pyplot(plt)
+
+result_df_lr = errors_df.groupby('model').agg(total_sales=('sales', 'sum'),
+                                          total_pred_sales=('pred_sales', 'sum'),
+                                          LR_overall_error=('errors', 'sum'),
+                                          MAE=('errors', mae),
+                                          RMSE=('errors', rmse),
+                                          MAPE=('errors', mape))
+print(result_df_lr)
+
+
+
 
 
 
