@@ -13,7 +13,7 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest
@@ -302,6 +302,53 @@ result_df_lr = errors_df.groupby('model').agg(total_sales=('sales', 'sum'),
                                           MAPE=('errors', mape))
 print(result_df_lr)
 
+arima_df = train_df[['date', 'sales']].set_index('date')
+arima_test_df = test_df[['date', 'sales']].set_index('date')
+
+# Fit the ARIMA model
+arima_model61 = ARIMA(arima_df.sales, order=(6, 1, 1)).fit()
+
+# Fit the SARIMA model
+sarima_model = SARIMAX(arima_df.sales, order=(6, 1, 0), seasonal_order=(6, 1, 0, 7),
+                       enforce_invertibility=False, enforce_stationarity=False)
+sarima_fit = sarima_model.fit()
+arima_test_df['pred_sales'] = sarima_fit.predict(start=arima_test_df.index[0],
+                                                 end=arima_test_df.index[-1], dynamic=True)
+
+arima_test_df['model'] = 'SARIMA'
+
+# Evaluate the predictions for Seasonal ARIMA model
+# plt.figure(figsize=(14,7))
+# plt.plot(train_df['date'], train_df['sales'], label='Train')
+# plt.plot(arima_test_df.index, arima_test_df['sales'], label='Test')
+# plt.plot(arima_test_df.index, arima_test_df['pred_sales'], label='Forecast - SARIMA')
+# plt.legend(loc='best')
+# plt.xlabel('date')
+# plt.ylabel('sales')
+# plt.title('Forecasts using Seasonal ARIMA (SARIMA) model')
+# plt.show()
+
+arima_test_df['errors'] = arima_test_df['sales'] - arima_test_df['pred_sales']
+
+plt.figure(figsize=(14,7))
+plt.plot(arima_test_df.index, np.abs(arima_test_df['errors']), label='errors')
+plt.plot(arima_test_df.index, arima_test_df['sales'], label='actual sales')
+plt.plot(arima_test_df.index, arima_test_df['pred_sales'], label='forecast')
+plt.legend(loc='best')
+plt.xlabel('date')
+plt.ylabel('sales')
+plt.title('Seasonal ARIMA (SARIMA) forecasts with actual sales and errors')
+plt.show()
+
+st.pyplot(plt)
+
+result_df_sarima = arima_test_df.groupby('model').agg(total_sales=('sales', 'sum'),
+                                          total_pred_sales=('pred_sales', 'sum'),
+                                          SARIMA_overall_error=('errors', 'sum'),
+                                          MAE=('errors', mae),
+                                          RMSE=('errors', rmse),
+                                          MAPE=('errors', mape))
+print(result_df_sarima)
 
 
 
