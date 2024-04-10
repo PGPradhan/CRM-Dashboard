@@ -93,28 +93,12 @@ squarify.plot(sizes=df_treemap['count'],
 
 # Configure plot display
 plt.axis('off')
-plt.title('##Customer Segments TreeMap', color='blue', fontsize=15)
+plt.title("""Customer Segments TreeMap""", color='blue', fontsize=15)
 
 # Display the plot in Streamlit
 st.pyplot(fig)
 
-# Add custom CSS
-st.markdown("""
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            padding: 20px;
-        }
-        h1 {
-            color: #333333;
-        }
-        .stPlot {
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-    </style>
-""", unsafe_allow_html=True)
+
 
 
 
