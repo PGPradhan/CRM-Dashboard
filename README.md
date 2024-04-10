@@ -1,7 +1,7 @@
 # CRM-Dashboard
 <h1>#Concepts Used </h1>
-  1. Segmentation
-  2. Classification
+  1. Segmentation <br>
+  2. Classification<br>
   3. Prediction Using <br>
     3.1 Seasonal Forecasting Model <br>
     3.2 Linear Regression <br>
@@ -15,4 +15,4 @@
 
 <h2>HOW TO RUN</h2>
 1) Clone the REPo
-2) Run the command streamlit run Homepage.py 
+2) Run the command <b>streamlit run Homepage.py </b> 
